@@ -38,6 +38,7 @@ void setup() {
   raw();
   keypad(stdscr, TRUE);
   noecho();
+
   win  = newwin(height+1, width+1, 0, 0);
 
   dir = STOP;
@@ -66,9 +67,12 @@ void draw() {
   }
 }
 
-void input()
-{
+void input() {
+  cbreak();
+  timeout(167); // wait 167 milliseconds for input
   int ch = getch();
+  if (ch == ERR)
+    return;  // ignore timeout expired
   switch(ch) {
     case KEY_UP:
       dir = UP;
