@@ -2,6 +2,7 @@
 #include <curses.h>
 
 using namespace std;
+
 bool gameOver;
 const int width = 20;
 const int height = 20;
@@ -10,88 +11,84 @@ int tailX[100], tailY[100];
 int nTail;
 enum eDirecton { STOP = 0, LEFT, RIGHT, UP, DOWN};
 eDirecton dir;
+char** board = new char*[height];
+WINDOW * win;
 
-void Setup()
-{
-  gameOver = false;
+void clearBoard() {
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      if (i == 0 || i == height-1 || j == 0 || j == width-1) {
+        board[i][j] = '#';
+      } else {
+        board[i][j] = ' ';
+      }
+    }
+  }
+}
+void setupBoard() {
+  for (int i = 0; i < height; i++)
+    board[i] = new char[width];
+
+  clearBoard();
+}
+
+void setup() {
+  /* Curses Initialisations */
+  initscr();
+  raw();
+  keypad(stdscr, TRUE);
+  noecho();
+  win  = newwin(height+1, width+1, 0, 0);
+
   dir = STOP;
   x = width / 2;
   y = height / 2;
   fruitX = rand() % width;
   fruitY = rand() % height;
+
+  setupBoard();
+
   score = 0;
+  gameOver = false;
 }
-
-void Draw()
-{
-  system("clear");
-  for (int i = 0; i < width+2; i++)
-    cout << "#";
-  cout << endl;
-
-  for (int i = 0; i < height; i++)
-  {
-    for (int j = 0; j < width; j++)
-    {
-      if (j == 0)
-        cout << "#";
-      if (i == y && j == x)
-        cout << "O";
-      else if (i == fruitY && j == fruitX)
-        cout << "F";
-      else
-      {
-        bool print = false;
-        for (int k = 0; k < nTail; k++)
-        {
-          if (tailX[k] == j && tailY[k] == i)
-          {
-            cout << "o";
-            print = true;
-          }
-        }
-        if (!print)
-          cout << " ";
-      }
-        
-
-      if (j == width - 1)
-        cout << "#";
-    }
-    cout << endl;
+ 
+void draw() {
+  clearBoard();
+  board[y][x] = 'O';
+  board[fruitY][fruitX] = 'F';
+  for (int k = 0; k < nTail; k++) {
+       board[tailY[k]][tailX[k]] = 'o';
   }
 
-  for (int i = 0; i < width+2; i++)
-    cout << "#";
-  cout << endl;
-  cout << "Score:" << score << endl;
+  for (int i = 0; i < height; i++) {
+    mvwprintw(win, i, 0, board[i]);
+    wrefresh(win);
+  }
 }
 
-void Input()
+void input()
 {
-  {
-    switch (getch())
-    {
-    case 'a':
-      dir = LEFT;
-      break;
-    case 'd':
-      dir = RIGHT;
-      break;
-    case 'w':
+  int ch = getch();
+  switch(ch) {
+    case KEY_UP:
       dir = UP;
       break;
-    case 's':
+    case KEY_DOWN:
       dir = DOWN;
+      break;
+    case KEY_LEFT:
+      dir = LEFT;
+      break;
+    case KEY_RIGHT:
+      dir = RIGHT;
       break;
     case 'x':
       gameOver = true;
       break;
-    }
   }
 }
 
-void Logic()
+void logic()
 {
   int prevX = tailX[0];
   int prevY = tailY[0];
@@ -107,25 +104,23 @@ void Logic()
     prevX = prev2X;
     prevY = prev2Y;
   }
-  switch (dir)
-  {
-  case LEFT:
-    x--;
-    break;
-  case RIGHT:
-    x++;
-    break;
-  case UP:
-    y--;
-    break;
-  case DOWN:
-    y++;
-    break;
-  default:
-    break;
+  switch (dir) {
+    case LEFT:
+      x--;
+      break;
+    case RIGHT:
+      x++;
+      break;
+    case UP:
+      y--;
+      break;
+    case DOWN:
+      y++;
+      break;
+    default:
+      break;
   }
-  //if (x > width || x < 0 || y > height || y < 0)
-  //  gameOver = true;
+
   if (x >= width) x = 0; else if (x < 0) x = width - 1;
   if (y >= height) y = 0; else if (y < 0) y = height - 1;
 
@@ -133,8 +128,7 @@ void Logic()
     if (tailX[i] == x && tailY[i] == y)
       gameOver = true;
 
-  if (x == fruitX && y == fruitY)
-  {
+  if (x == fruitX && y == fruitY) {
     score += 10;
     fruitX = rand() % width;
     fruitY = rand() % height;
@@ -144,13 +138,14 @@ void Logic()
 
 int main()
 {
-  Setup();
+  setup();
   while (!gameOver)
   {
-    Draw();
-    Input();
-    Logic();
+    draw();
+    input();
+    logic();
   }
+  endwin();
   return 0;
 }
 
