@@ -25,6 +25,7 @@ void clearBoard() {
     }
   }
 }
+
 void setupBoard() {
   for (int i = 0; i < height; i++)
     board[i] = new char[width];
@@ -65,6 +66,9 @@ void draw() {
     mvwprintw(win, i, 0, board[i]);
     wrefresh(win);
   }
+	std::string s = std::to_string(score);
+	char const *scoreChar = s.c_str();
+	mvwprintw(win, height, 0, scoreChar);
 }
 
 void input() {
@@ -140,8 +144,7 @@ void logic()
   }
 }
 
-int main()
-{
+int main() {
   setup();
   while (!gameOver)
   {
