@@ -4,7 +4,7 @@ LDFLAGS  := -L/usr/lib -lstdc++ -lm -lncurses
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
-TARGET   := main
+TARGET   := snake
 INCLUDE  := -Iinclude/
 SRC      :=                      \
 	$(wildcard src/module1/*.cpp) \
