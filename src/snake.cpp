@@ -1,158 +1,203 @@
-#include <iostream>
 #include <curses.h>
 
-using namespace std;
+#include <iostream>
+
 
 bool gameOver;
-const int width = 20;
-const int height = 20;
-int x, y, fruitX, fruitY, score;
-int tailX[100], tailY[100];
+constexpr int width { 40 };
+constexpr int height { 20 };
+int x;
+int y;
+int fruitX;
+int fruitY;
+int score;
+int tailX[100];
+int tailY[100];
 int nTail;
-enum eDirecton { STOP = 0, LEFT, RIGHT, UP, DOWN};
+
+enum eDirecton
+{
+    STOP = 0,
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN
+};
 eDirecton dir;
-char** board = new char*[height];
+
+char* board = new char[width*height];
 WINDOW * win;
 
-void clearBoard() {
-  for (int i = 0; i < height; i++) {
-    for (int j = 0; j < width; j++) {
-      if (i == 0 || i == height-1 || j == 0 || j == width-1) {
-        board[i][j] = '#';
-      } else {
-        board[i][j] = ' ';
-      }
+void clearBoard()
+{
+    for (int col = 0; col < height; col++)
+    {
+        for (int row = 0; row < width; row++)
+        {
+            if (row == 0 || row == width-1 || col == 0 || col == height-1)
+            {
+                board[row + col*width] = '#';
+            } else
+            {
+                board[row + col*width] = ' ';
+            }
+        }
     }
-  }
-}
-
-void setupBoard() {
-  for (int i = 0; i < height; i++)
-    board[i] = new char[width];
-
-  clearBoard();
 }
 
 void setup() {
-  /* Curses Initialisations */
-  initscr();
-  raw();
-  keypad(stdscr, TRUE);
-  noecho();
+    // Curses Initialisations
+    initscr();
+    raw();
+    keypad(stdscr, TRUE);
+    noecho();
 
-  win  = newwin(height+1, width+1, 0, 0);
+    win = newwin(height + 1, width, 0, 0);
 
-  dir = STOP;
-  x = width / 2;
-  y = height / 2;
-  fruitX = rand() % width;
-  fruitY = rand() % height;
+    dir = STOP;
+    x = width / 2;
+    y = height / 2;
+    fruitX = rand() % width;
+    fruitY = rand() % height;
 
-  setupBoard();
+    clearBoard();
 
-  score = 0;
-  gameOver = false;
+    score = 0;
+    gameOver = false;
 }
- 
-void draw() {
-  clearBoard();
-  board[y][x] = 'O';
-  board[fruitY][fruitX] = 'F';
-  for (int k = 0; k < nTail; k++) {
-       board[tailY[k]][tailX[k]] = 'o';
-  }
 
-  for (int i = 0; i < height; i++) {
-    mvwprintw(win, i, 0, board[i]);
+void draw()
+{
+    clearBoard();
+    board[fruitX + fruitY * width] = 'X';
+    board[x + y * width] = 'O';
+    for (int k { 0 }; k < nTail; k++)
+    {
+             board[tailX[k] + tailY[k] * width] = 'o';
+    }
+
+    mvwprintw(win, 0, 0, board);
     wrefresh(win);
-  }
-	std::string s = std::to_string(score);
-	char const *scoreChar = s.c_str();
-	mvwprintw(win, height, 0, scoreChar);
+
+    char const *scoreStr = std::to_string(score).c_str();
+    mvwprintw(win, height, 0, scoreStr);
 }
 
-void input() {
-  cbreak();
-  timeout(167); // wait 167 milliseconds for input
-  int ch = getch();
-  if (ch == ERR)
-    return;  // ignore timeout expired
-  switch(ch) {
-    case KEY_UP:
-      dir = UP;
-      break;
-    case KEY_DOWN:
-      dir = DOWN;
-      break;
-    case KEY_LEFT:
-      dir = LEFT;
-      break;
-    case KEY_RIGHT:
-      dir = RIGHT;
-      break;
-    case 'x':
-      gameOver = true;
-      break;
-  }
+void input()
+{
+    cbreak();
+    timeout(167); // wait 167 milliseconds for input
+    int ch = getch();
+    if (ch == ERR)
+    {
+        // ignore timeout expired
+        return;
+    }
+
+    switch(ch)
+    {
+        case KEY_UP:
+        case 'w':
+            dir = UP;
+            break;
+        case KEY_DOWN:
+        case 's':
+            dir = DOWN;
+            break;
+        case KEY_LEFT:
+        case 'a':
+            dir = LEFT;
+            break;
+        case KEY_RIGHT:
+        case 'd':
+            dir = RIGHT;
+            break;
+        case 'q':
+        case 'Q':
+            gameOver = true;
+            break;
+    }
 }
 
 void logic()
 {
-  int prevX = tailX[0];
-  int prevY = tailY[0];
-  int prev2X, prev2Y;
-  tailX[0] = x;
-  tailY[0] = y;
-  for (int i = 1; i < nTail; i++)
-  {
-    prev2X = tailX[i];
-    prev2Y = tailY[i];
-    tailX[i] = prevX;
-    tailY[i] = prevY;
-    prevX = prev2X;
-    prevY = prev2Y;
-  }
-  switch (dir) {
-    case LEFT:
-      x--;
-      break;
-    case RIGHT:
-      x++;
-      break;
-    case UP:
-      y--;
-      break;
-    case DOWN:
-      y++;
-      break;
-    default:
-      break;
-  }
+    int prevX = tailX[0];
+    int prevY = tailY[0];
+    int prev2X, prev2Y;
+    tailX[0] = x;
+    tailY[0] = y;
+    for (int i = 1; i < nTail; i++)
+    {
+        prev2X = tailX[i];
+        prev2Y = tailY[i];
+        tailX[i] = prevX;
+        tailY[i] = prevY;
+        prevX = prev2X;
+        prevY = prev2Y;
+    }
 
-  if (x >= width) x = 0; else if (x < 0) x = width - 1;
-  if (y >= height) y = 0; else if (y < 0) y = height - 1;
+    switch (dir)
+    {
+        case LEFT:
+            x--;
+            break;
+        case RIGHT:
+            x++;
+            break;
+        case UP:
+            y--;
+            break;
+        case DOWN:
+            y++;
+            break;
+        default:
+            break;
+    }
 
-  for (int i = 0; i < nTail; i++)
-    if (tailX[i] == x && tailY[i] == y)
-      gameOver = true;
+    if (x >= width)
+    {
+        x = 0;
+    } else if (x < 0)
+    {
+        x = width - 1;
+    };
 
-  if (x == fruitX && y == fruitY) {
-    score += 10;
-    fruitX = rand() % width;
-    fruitY = rand() % height;
-    nTail++;
-  }
+    if (y >= height)
+    {
+        y = 0;
+    } else if (y < 0)
+    {
+        y = height - 1;
+    }
+
+    for (int i = 0; i < nTail; i++)
+    {
+        if (tailX[i] == x && tailY[i] == y)
+        {
+            gameOver = true;
+        }
+    }
+
+    if (x == fruitX && y == fruitY)
+    {
+        score += 10;
+        fruitX = rand() % width;
+        fruitY = rand() % height;
+        nTail++;
+    }
 }
 
-int main() {
-  setup();
-  while (!gameOver)
-  {
-    draw();
-    input();
-    logic();
-  }
-  endwin();
-  return 0;
+int main()
+{
+    setup();
+    while (!gameOver)
+    {
+        draw();
+        input();
+        logic();
+    }
+    endwin();
+
+    return 0;
 }
 
